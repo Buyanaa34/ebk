@@ -1,0 +1,45 @@
+package com.golomt.gateway.GMTUtility;
+
+import com.golomt.gateway.GMTEntity.GMTTotalAccessEntity;
+import com.golomt.gateway.GMTRepository.GMTTotalAccessRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.env.Environment;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.support.atomic.RedisAtomicLong;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import java.util.Date;
+
+@Component
+public class GMTCronUtilities {
+
+    /**
+     * Autowire
+     **/
+
+    @Autowired
+    ApplicationContext applicationContext;
+
+    @Autowired
+    Environment env;
+
+    @Autowired
+    GMTTotalAccessRepository accessRepository;
+
+    @Scheduled(cron = "0 0 * * * *")
+    public void schedule() {
+        if (env.getActiveProfiles()[0].equals("prod")) {
+            Date date = new Date();
+            GMTCacheUtilities.PATHS.entrySet().iterator().forEachRemaining(data -> {
+                RedisAtomicLong atomicLong = new RedisAtomicLong(data.getValue() + "_" + data.getKey(), (JedisConnectionFactory) applicationContext.getBean("jedisConnectionFactory"));
+                if (atomicLong.get() > 0) {
+                    accessRepository.save(new GMTTotalAccessEntity(data.getKey(), data.getValue(), Math.toIntExact(atomicLong.get()), date));
+                    atomicLong.set(0);
+                }
+            });
+        }
+    }
+
+}
