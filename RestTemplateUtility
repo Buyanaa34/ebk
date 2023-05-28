@@ -1,0 +1,77 @@
+package com.golomt.gateway.GMTUtility;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
+
+import java.net.Proxy;
+import java.util.Collections;
+import java.util.Map;
+
+/**
+ * RestTemplateUtility
+ *
+ * @author 26b712984 Munkhbayasgalan P.
+ **/
+
+public class RestTemplateUtility<T, K> {
+
+    public static RestTemplate getRestTemplate() {
+        return getRestTemplate(null, null, null);
+    }
+
+    public static RestTemplate getRestTemplate(Proxy proxy) {
+        return getRestTemplate(proxy, null, null);
+    }
+
+    public static RestTemplate getRestTemplate(Proxy proxy, Integer connectTimeOut, Integer readTimeOut) {
+
+        return new RestTemplate(getRequestFactory(proxy, null, null));
+    }
+
+    public static HttpHeaders getHeaders(String serviceId, final Map<String, String> headers) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        httpHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+        headers.forEach((k, v) -> {
+            httpHeaders.add(k, v);
+        });
+
+        httpHeaders.add("x-golomt-service".toLowerCase(), serviceId);
+        httpHeaders.add("x-golomt-service", serviceId);
+
+        return httpHeaders;
+    }
+
+    public K doPostRequest(String url, T dto, K response) {
+
+        RestTemplate restTemplate = getRestTemplate();
+
+        ResponseEntity<?> resp = restTemplate.postForEntity(url, dto, response.getClass());
+
+        return (K) resp.getBody();
+    }
+
+    public K doGetRequest(String url, K response) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity<?> resp = restTemplate.getForEntity(url, response.getClass());
+
+        return (K) resp.getBody();
+    }
+
+
+    public static SimpleClientHttpRequestFactory getRequestFactory(Proxy proxy, Integer connectTimeOut, Integer readTimeOut) {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+
+        if (proxy != null) requestFactory.setProxy(proxy);
+        if (connectTimeOut != null) requestFactory.setConnectTimeout(connectTimeOut);
+        if (readTimeOut != null) requestFactory.setReadTimeout(readTimeOut);
+
+        return requestFactory;
+    }
+}
