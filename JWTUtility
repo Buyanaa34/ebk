@@ -1,0 +1,71 @@
+package com.golomt.gateway.GMTUtility;
+
+import io.jsonwebtoken.Jwts;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+
+/**
+ * JWTUtility
+ *
+ * @author 26b712984 Munkhbayasgalan P.
+ * @created 7/19/2022
+ **/
+
+@Component
+public class JWTUtility {
+    @Autowired
+    Environment env;
+
+    @Autowired
+    GMTEncrypt encrypt;
+
+    @Value("${security.jwt.token.secret-key:secret-key}")
+    private String secretKey;
+
+    @PostConstruct
+    protected void init() {
+        secretKey = env.getProperty("JWT_PRIVATE_KEY");
+    }
+
+    public String getUsername(String token) {
+        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().getSubject();
+    }
+
+    public String resolveToken(ServerHttpRequest req) {
+        String bearerToken = req.getHeaders().getFirst("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return null;
+    }
+
+    public String getCIF(String token) {
+        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().get("cif").toString();
+    }
+
+    public String getIpAddress(String token) {
+        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().get("ip").toString();
+    }
+
+    public String getUID(String token) {
+        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().get("uid").toString();
+    }
+
+    public String getMobileNumber(String token) {
+        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().get("mn").toString();
+    }
+
+    public String getCorpId(String token) {
+        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().get("ci").toString();
+    }
+
+    public String getUserId(String token) {
+        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().get("cu").toString();
+    }
+
+}
