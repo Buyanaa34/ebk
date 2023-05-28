@@ -1,0 +1,36 @@
+package com.golomt.gateway.GMTUtility;
+
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.util.HashMap;
+
+/**
+ * GMTCacheUtilities @author Tushig
+ */
+
+@Component
+public class GMTCacheUtilities {
+
+    private static GMTCacheUtilities INSTANCE;
+
+    public static String PFM_TOKEN;
+
+    public static String DMF_TOKEN;
+
+    public static HashMap<String, String> PATHS;
+
+    /**
+     * Instances
+     **/
+
+    public static GMTCacheUtilities getInstance() {
+        return GMTCacheUtilities.INSTANCE != null ? GMTCacheUtilities.INSTANCE : (GMTCacheUtilities.INSTANCE = new GMTCacheUtilities());
+    }
+
+    @PostConstruct
+    public void init() {
+        GMTCacheUtilities.PATHS = GMTCacheUtilities.PATHS != null ? GMTCacheUtilities.PATHS : new HashMap<>();
+    }
+
+}
