@@ -1,0 +1,119 @@
+package com.golomt.gateway.GMTUtility;
+
+import org.apache.commons.codec.binary.Base64;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Objects;
+
+@Service
+public class GMTEncrypt {
+
+    /**
+     * Autowire
+     **/
+
+    @Autowired
+    Environment env;
+
+    private byte[] getPrivateKey() {
+        return Objects.requireNonNull(env.getProperty("PRIVATE_KEY")).getBytes(StandardCharsets.UTF_8);
+    }
+
+    private byte[] getPublicKey() {
+        return Objects.requireNonNull(env.getProperty("PUBLIC_KEY")).getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * get.Session.Key
+     **/
+
+    private byte[] getSessionKey() {
+        return Objects.requireNonNull(env.getProperty("ENC_KEY")).getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * getSession.IV
+     **/
+
+    private byte[] getSessionIV() {
+        return Objects.requireNonNull(env.getProperty("ENC_IV_KEY")).getBytes(StandardCharsets.UTF_8);
+    }
+
+    public String getEncryption(String request) {
+
+        try {
+
+            Cipher cipher = Cipher.getInstance("RSA");
+
+            X509EncodedKeySpec spec = new X509EncodedKeySpec(new Base64().decode(getPublicKey()));
+
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+
+            cipher.init(Cipher.ENCRYPT_MODE, kf.generatePublic(spec));
+
+            return Base64.encodeBase64String(cipher.doFinal(request.getBytes(StandardCharsets.UTF_8)));
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return null;
+
+    }
+
+    public String getDecryption(String response) {
+
+        try {
+
+            Cipher cipher = Cipher.getInstance("RSA");
+
+            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(new Base64().decode(getPrivateKey()));
+
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+
+            cipher.init(Cipher.DECRYPT_MODE, kf.generatePrivate(spec));
+
+            return new String(cipher.doFinal(Base64.decodeBase64(response)), StandardCharsets.UTF_8);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return null;
+
+    }
+
+    /**
+     * get.Decryption
+     **/
+
+    public String getDecryptionAES(String response) {
+
+        try {
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(this.getSessionKey(), "AES"), new IvParameterSpec(this.getSessionIV()));
+
+            byte[] bytePlainText = cipher.doFinal(java.util.Base64.getMimeDecoder().decode(response.getBytes(StandardCharsets.UTF_8)));
+
+            return new String(bytePlainText, StandardCharsets.UTF_8);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return null;
+
+    }
+
+}
